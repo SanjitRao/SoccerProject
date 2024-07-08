@@ -56,13 +56,22 @@ class App(customtkinter.CTk):
         # Bottom right
         self.canvas.create_arc(685, 435, 715, 465, start=90, extent=90, outline="white", width=3)
 
+        #========================================================================================================
+
+        self.gamestate = 0
+
+
         self.red = self.init_team("red", 0, "433")
         self.blue = self.init_team("blue", 1, "433")
         self.designated_player = self.blue[0]
 
-        BALL = self.canvas.create_oval(370, 245, 380, 255, fill="purple")
+        self.BALL = self.canvas.create_oval(370, 245, 380, 255, fill="purple")
+        self.ball_s = 0 # ball speed
+        self.ball_a = 0 # ball is stationary with no velocity initially
+        self.ball_d = "" # ball direction is nothing initially, (R, L, U, D)
+        self.has_ball = False
 
-        # Create buttons for controlling player 1
+        # Create buttons for controlling player
         btn_up = customtkinter.CTkButton(self, text="Up", command=self.move_player_up)
         btn_up.pack()
         btn_down = customtkinter.CTkButton(self, text="Down", command=self.move_player_down)
@@ -72,7 +81,7 @@ class App(customtkinter.CTk):
         btn_right = customtkinter.CTkButton(self, text="Right", command=self.move_player_right)
         btn_right.pack()
 
-        self.des_player_entry = customtkinter.CTkEntry(self, placeholder_text="Enter Your Designated Player")
+        self.des_player_entry = customtkinter.CTkEntry(self, placeholder_text="Enter Designated Player")
         self.des_player_entry.pack()
         submit = customtkinter.CTkButton(self, text="Submit", command=self.select_des_player)
         submit.pack()
@@ -111,6 +120,8 @@ class App(customtkinter.CTk):
 
     def control_player(self, x, y):
         self.canvas.coords(self.designated_player, x-5, y-5, x+5, y+5)
+        self.gamestate +=1
+        print(self.gamestate)
 
     def move_player_up(self):
         x1, y1, x2, y2 = self.canvas.coords(self.designated_player)
@@ -128,12 +139,6 @@ class App(customtkinter.CTk):
     def move_player_right(self):
         x1, y1, x2, y2 = self.canvas.coords(self.designated_player)
         self.control_player((x1 + x2) // 2 + 10, (y1 + y2) // 2)
-
-    
-            
-
-
-
 
     def init_team(self, color, half, setup):
         # type == red/blue (0, 1), half == left/right (0, 1), setup == "433/442/etc"
@@ -178,6 +183,41 @@ class App(customtkinter.CTk):
                 RIGHT_WING = self.canvas.create_oval(395, 345, 405, 355, fill=color)
         
                 return [RIGHTBACK, RIGHT_CENTER_DEFENSE, LEFT_CENTER_DEFENSE, LEFTBACK, RIGHT_MF, CENT_MF, LEFT_MF, RIGHT_WING, STRIKER, LEFT_WING, GOALKEEPER]
+
+
+    def control_ball(self, x, y):
+        # manage HOW ball far ball moves using current velocity, then update velocity (constant velocity)
+        self.canvas.coords(self.BALL, x-5, y-5, x+5, y+5)
+
+    def move_ball_up(self):
+        x1, y1, x2, y2 = self.canvas.coords(self.BALL)
+        print('ball move up')
+        self.control_ball((x1 + x2) // 2, (y1 + y2) // 2 - 10)
+
+    def move_ball_down(self):
+        x1, y1, x2, y2 = self.canvas.coords(self.BALL)
+        self.control_ball((x1 + x2) // 2, (y1 + y2) // 2 + 10)
+
+    def move_ball_left(self):
+        x1, y1, x2, y2 = self.canvas.coords(self.BALL)
+        self.control_ball((x1 + x2) // 2 - 10, (y1 + y2) // 2)
+
+    def move_ball_right(self):
+        x1, y1, x2, y2 = self.canvas.coords(self.BALL)
+        self.control_ball((x1 + x2) // 2 + 10, (y1 + y2) // 2)
+
+    def recieve_ball(self):
+        # if player loc == ball loc, ball now moves with player, has_ball = True, change ball loc to player loc for all player movements
+        pass
+
+    def kick_ball(self, direction):
+        # direction (str): L R U D
+        # if has_ball == True, kick ball at some velocity with constant deceleration in the given direction, update velocity as needed
+        if not self.has_ball:
+            return
+
+        
+    
 
 
 
