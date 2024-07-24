@@ -71,15 +71,17 @@ class App(customtkinter.CTk):
         self.ball_d = "" # ball direction is nothing initially, (R, L, U, D)
         self.has_ball = False
 
-        # Create buttons for controlling player
-        btn_up = customtkinter.CTkButton(self, text="Up", command=self.move_player_up)
-        btn_up.pack()
-        btn_down = customtkinter.CTkButton(self, text="Down", command=self.move_player_down)
-        btn_down.pack()
-        btn_left = customtkinter.CTkButton(self, text="Left", command=self.move_player_left)
-        btn_left.pack()
-        btn_right = customtkinter.CTkButton(self, text="Right", command=self.move_player_right)
-        btn_right.pack()
+        # Create buttons for controlling player 1
+        btn_player1_up = customtkinter.CTkButton(self, text="Player 1 Up", command=self.move_player1_up)
+        btn_player1_up.pack()
+        btn_player1_down = customtkinter.CTkButton(self, text="Player 1 Down", command=self.move_player1_down)
+        btn_player1_down.pack()
+        btn_player1_left = customtkinter.CTkButton(self, text="Player 1 Left", command=self.move_player1_left)
+        btn_player1_left.pack()
+        btn_player1_right = customtkinter.CTkButton(self, text="Player 1 Right", command=self.move_player1_right)
+        btn_player1_right.pack()
+        btn_player1_kick = customtkinter.CTkButton(self, text="Player 1 Kick", command=self.kick_ball_away_player1)
+        btn_player1_kick.pack()
 
         self.des_player_entry = customtkinter.CTkEntry(self, placeholder_text="Enter Designated Player")
         self.des_player_entry.pack()
@@ -117,28 +119,84 @@ class App(customtkinter.CTk):
         if inits == "GK":
             self.designated_player = self.blue[10]
 
+    # Move the ball with a specified direction and distance
+    def move_ball(self, dx, dy):    
+        x1, y1, x2, y2 = self.canvas.coords(self.BALL)
+        new_x1, new_y1 = x1 + dx, y1 + dy
+        new_x2, new_y2 = x2 + dx, y2 + dy
 
-    def control_player(self, x, y):
-        self.canvas.coords(self.designated_player, x-5, y-5, x+5, y+5)
-        self.gamestate +=1
-        print(self.gamestate)
+        # Ensure the ball stays within boundaries
+        if new_x1 >= 50 and new_x2 <= 700 and new_y1 >= 50 and new_y2 <= 450:
+            self.canvas.move(self.BALL, dx, dy)
 
-    def move_player_up(self):
-        x1, y1, x2, y2 = self.canvas.coords(self.designated_player)
-        print('move up')
-        self.control_player((x1 + x2) // 2, (y1 + y2) // 2 - 10)
+    # Check if the player is close enough to kick the ball
+    def is_near_ball(self, player):
+        px1, py1, px2, py2 = self.canvas.coords(player)
+        bx1, by1, bx2, by2 = self.canvas.coords(self.BALL)
 
-    def move_player_down(self):
-        x1, y1, x2, y2 = self.canvas.coords(self.designated_player)
-        self.control_player((x1 + x2) // 2, (y1 + y2) // 2 + 10)
+        player_center_x, player_center_y = (px1 + px2) / 2, (py1 + py2) / 2
+        ball_center_x, ball_center_y = (bx1 + bx2) / 2, (by1 + by2) / 2
 
-    def move_player_left(self):
-        x1, y1, x2, y2 = self.canvas.coords(self.designated_player)
-        self.control_player((x1 + x2) // 2 - 10, (y1 + y2) // 2)
+        # Calculate distance between player and ball
+        distance = ((player_center_x - ball_center_x) ** 2 + (player_center_y - ball_center_y) ** 2) ** 0.5
 
-    def move_player_right(self):
-        x1, y1, x2, y2 = self.canvas.coords(self.designated_player)
-        self.control_player((x1 + x2) // 2 + 10, (y1 + y2) // 2)
+        # Define the proximity threshold for kicking the ball
+        return distance < 15  # Adjust this value as needed
+
+    # Functions for player movement and kicking
+    def move_player(self, player, dx, dy):
+        x1, y1, x2, y2 = self.canvas.coords(player)
+        new_x1, new_y1 = x1 + dx, y1 + dy
+        new_x2, new_y2 = x2 + dx, y2 + dy
+
+        # Ensure the player stays within boundaries
+        if new_x1 >= 50 and new_x2 <= 700 and new_y1 >= 50 and new_y2 <= 450:
+            self.canvas.move(player, dx, dy)
+
+            # Check if player can kick the ball
+            if self.is_near_ball(player):
+                self.move_ball(dx * 2, dy * 2)  # Kick the ball in the same direction with greater distance
+    # Function to kick the ball away from a player
+    def kick_ball_away(self):
+        px1, py1, px2, py2 = self.canvas.coords(self.designated_player)
+        bx1, by1, bx2, by2 = self.canvas.coords(self.BALL)
+
+        player_center_x, player_center_y = (px1 + px2) / 2, (py1 + py2) / 2
+        ball_center_x, ball_center_y = (bx1 + bx2) / 2, (by1 + by2) / 2
+
+        # Calculate direction to kick the ball away
+        dx = ball_center_x - player_center_x
+        dy = ball_center_y - player_center_y
+
+        # Normalize the direction vector
+        magnitude = (dx ** 2 + dy ** 2) ** 0.5
+        if magnitude != 0:
+            dx /= magnitude
+            dy /= magnitude
+
+        # Move the ball in the opposite direction
+        self.move_ball(dx * 20, dy * 20)  # Adjust the distance multiplier as needed
+
+    # Controls for player 1
+    def move_player1_up(self):
+        self.move_player(self.designated_player, 0, -10)
+
+    def move_player1_down(self):
+        self.move_player(self.designated_player, 0, 10)
+
+    def move_player1_left(self):
+        self.move_player(self.designated_player, -10, 0)
+
+    def move_player1_right(self):
+        self.move_player(self.designated_player, 10, 0)
+
+    def kick_ball_away_player1(self):
+        if self.is_near_ball(self.designated_player):
+            self.kick_ball_away()
+
+
+
+
 
     def init_team(self, color, half, setup):
         # type == red/blue (0, 1), half == left/right (0, 1), setup == "433/442/etc"
@@ -183,43 +241,6 @@ class App(customtkinter.CTk):
                 RIGHT_WING = self.canvas.create_oval(395, 345, 405, 355, fill=color)
         
                 return [RIGHTBACK, RIGHT_CENTER_DEFENSE, LEFT_CENTER_DEFENSE, LEFTBACK, RIGHT_MF, CENT_MF, LEFT_MF, RIGHT_WING, STRIKER, LEFT_WING, GOALKEEPER]
-
-
-    def control_ball(self, x, y):
-        # manage HOW ball far ball moves using current velocity, then update velocity (constant velocity)
-        self.canvas.coords(self.BALL, x-5, y-5, x+5, y+5)
-
-    def move_ball_up(self):
-        x1, y1, x2, y2 = self.canvas.coords(self.BALL)
-        print('ball move up')
-        self.control_ball((x1 + x2) // 2, (y1 + y2) // 2 - 10)
-
-    def move_ball_down(self):
-        x1, y1, x2, y2 = self.canvas.coords(self.BALL)
-        self.control_ball((x1 + x2) // 2, (y1 + y2) // 2 + 10)
-
-    def move_ball_left(self):
-        x1, y1, x2, y2 = self.canvas.coords(self.BALL)
-        self.control_ball((x1 + x2) // 2 - 10, (y1 + y2) // 2)
-
-    def move_ball_right(self):
-        x1, y1, x2, y2 = self.canvas.coords(self.BALL)
-        self.control_ball((x1 + x2) // 2 + 10, (y1 + y2) // 2)
-
-    def recieve_ball(self):
-        # if player loc == ball loc, ball now moves with player, has_ball = True, change ball loc to player loc for all player movements
-        pass
-
-    def kick_ball(self, direction):
-        # direction (str): L R U D
-        # if has_ball == True, kick ball at some velocity with constant deceleration in the given direction, update velocity as needed
-        if not self.has_ball:
-            return
-
-        
-    
-
-
 
 app = App()
 app.mainloop()
