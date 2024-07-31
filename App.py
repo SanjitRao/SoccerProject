@@ -17,6 +17,7 @@ class App(customtkinter.CTk):
 
         # Draw the outer boundary of the soccer field
         field_outline = self.canvas.create_rectangle(50, 50, 700, 450, outline="white", width=3)
+
         # Draw the center line
         center_line = self.canvas.create_line(375, 50, 375, 450, fill="white", width=3)
 
@@ -100,7 +101,7 @@ class App(customtkinter.CTk):
             self.designated_player = self.blue[0]
         if inits == "LCD":
             self.designated_player = self.blue[1]
-        if inits == "RDC":
+        if inits == "RCD":
             self.designated_player = self.blue[2]
         if inits == "RB":
             self.designated_player = self.blue[3]
@@ -130,7 +131,7 @@ class App(customtkinter.CTk):
         # how to create gamestates? call this ftn every time a button is clicked
         if self.has_ball:
             self.num_gamestates = 5
-            self.move_ball(dy * 2, dy * 2)
+            #self.move_ball(dy * 2, dy * 2)
             self.has_ball = False
 
 
@@ -165,7 +166,8 @@ class App(customtkinter.CTk):
         new_x2, new_y2 = x2 + dx, y2 + dy
 
         # Ensure the player stays within boundaries
-        if new_x1 >= 50 and new_x2 <= 700 and new_y1 >= 50 and new_y2 <= 450:
+        # player boundaries defined by  self.canvas.create_rectangle(30, 30, 720, 470, outline="white", width=3)
+        if new_x1 >= 30 and new_x2 <= 720 and new_y1 >= 30 and new_y2 <= 470:
             self.canvas.move(player, dx, dy)
 
             # Check if player can kick the ball
@@ -175,7 +177,7 @@ class App(customtkinter.CTk):
                 self.DY = dy
                 self.move_ball(dx * 2, dy * 2)  # Kick the ball in the same direction with greater distance
 
-            if self.num_gamestates > 0:
+            if self.num_gamestates > 0 and not self.has_ball:
                 self.move_ball(self.DX * 2, self.DY * 2)
                 self.num_gamestates -=1
 
