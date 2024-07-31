@@ -58,18 +58,17 @@ class App(customtkinter.CTk):
 
         #========================================================================================================
 
-        self.gamestate = 0
-
 
         self.red = self.init_team("red", 0, "433")
         self.blue = self.init_team("blue", 1, "433")
-        self.designated_player = self.blue[0]
+        self.designated_player = self.blue[8] # player starts as a striker
 
-        self.BALL = self.canvas.create_oval(370, 245, 380, 255, fill="purple")
-        self.ball_s = 0 # ball speed
-        self.ball_a = 0 # ball is stationary with no velocity initially
-        self.ball_d = "" # ball direction is nothing initially, (R, L, U, D)
+        self.BALL = self.canvas.create_oval(370, 245, 380, 255, fill="white")
+        self.DX = 0
+        self.DY = 0
         self.has_ball = False
+        self.num_gamestates = 0
+
 
         # Create buttons for controlling player 1
         btn_player1_up = customtkinter.CTkButton(self, text="Player 1 Up", command=self.move_player1_up)
@@ -80,8 +79,9 @@ class App(customtkinter.CTk):
         btn_player1_left.pack()
         btn_player1_right = customtkinter.CTkButton(self, text="Player 1 Right", command=self.move_player1_right)
         btn_player1_right.pack()
-        btn_player1_kick = customtkinter.CTkButton(self, text="Player 1 Kick", command=self.kick_ball_away_player1)
-        btn_player1_kick.pack()
+
+        btn_player_pass = customtkinter.CTkButton(self, text="Pass", command = self.PASS_BALL)
+        btn_player_pass.pack()
 
         self.des_player_entry = customtkinter.CTkEntry(self, placeholder_text="Enter Designated Player")
         self.des_player_entry.pack()
@@ -119,6 +119,21 @@ class App(customtkinter.CTk):
         if inits == "GK":
             self.designated_player = self.blue[10]
 
+    def PASS_BALL(self):
+        # use self.DX and self.DY in self.pass_ball(self.DX, self.DY)
+        self.pass_ball(self.DX, self.DY)
+        
+
+    def pass_ball(self, dx, dy):
+        # at each gamestate for 5 gamestates, ball move_ball's in the direction defined by dx and dy
+        # if ball is picked up by a player before 5 gamestates, then this ftn is overwritten (if not self.has_ball)
+        # how to create gamestates? call this ftn every time a button is clicked
+        if self.has_ball:
+            self.num_gamestates = 5
+            self.move_ball(dy * 2, dy * 2)
+            self.has_ball = False
+
+
     # Move the ball with a specified direction and distance
     def move_ball(self, dx, dy):    
         x1, y1, x2, y2 = self.canvas.coords(self.BALL)
@@ -155,27 +170,14 @@ class App(customtkinter.CTk):
 
             # Check if player can kick the ball
             if self.is_near_ball(player):
+                self.has_ball = True
+                self.DX = dx
+                self.DY = dy
                 self.move_ball(dx * 2, dy * 2)  # Kick the ball in the same direction with greater distance
-    # Function to kick the ball away from a player
-    def kick_ball_away(self):
-        px1, py1, px2, py2 = self.canvas.coords(self.designated_player)
-        bx1, by1, bx2, by2 = self.canvas.coords(self.BALL)
 
-        player_center_x, player_center_y = (px1 + px2) / 2, (py1 + py2) / 2
-        ball_center_x, ball_center_y = (bx1 + bx2) / 2, (by1 + by2) / 2
-
-        # Calculate direction to kick the ball away
-        dx = ball_center_x - player_center_x
-        dy = ball_center_y - player_center_y
-
-        # Normalize the direction vector
-        magnitude = (dx ** 2 + dy ** 2) ** 0.5
-        if magnitude != 0:
-            dx /= magnitude
-            dy /= magnitude
-
-        # Move the ball in the opposite direction
-        self.move_ball(dx * 20, dy * 20)  # Adjust the distance multiplier as needed
+            if self.num_gamestates > 0:
+                self.move_ball(self.DX * 2, self.DY * 2)
+                self.num_gamestates -=1
 
     # Controls for player 1
     def move_player1_up(self):
@@ -189,13 +191,6 @@ class App(customtkinter.CTk):
 
     def move_player1_right(self):
         self.move_player(self.designated_player, 10, 0)
-
-    def kick_ball_away_player1(self):
-        if self.is_near_ball(self.designated_player):
-            self.kick_ball_away()
-
-
-
 
 
     def init_team(self, color, half, setup):
