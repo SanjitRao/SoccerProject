@@ -40,10 +40,10 @@ class App(customtkinter.CTk):
 
         # Draw the goals
         # Left goal
-        left_goal = self.canvas.create_rectangle(45, 225, 50, 275, outline="white", width=3)
+        left_goal = self.canvas.create_rectangle(30, 225, 50, 275, outline="white", width=3)
 
         # Right goal
-        right_goal = self.canvas.create_rectangle(700, 225, 705, 275, outline="white", width=3)
+        right_goal = self.canvas.create_rectangle(700, 225, 720, 275, outline="white", width=3)
 
         # Draw the corner arcs
         # canvas.create_arc(x1, y1, x2, y2, start = from left to right) 
@@ -58,17 +58,24 @@ class App(customtkinter.CTk):
         self.canvas.create_arc(685, 435, 715, 465, start=90, extent=90, outline="white", width=3)
 
         #========================================================================================================
-
+        #self.TEST1 = self.canvas.create_rectangle(30, 30, 720, 470, outline="white", width=3)
+        self.TEST2 = self.canvas.create_rectangle(10, 10, 740, 490, outline="white", width=3)
 
         self.red = self.init_team("red", 0, "433")
         self.blue = self.init_team("blue", 1, "433")
         self.designated_player = self.blue[8] # player starts as a striker
 
-        self.BALL = self.canvas.create_oval(370, 245, 380, 255, fill="white")
+        self.BALL = self.canvas.create_oval(370, 245, 380, 255, fill="purple")
         self.DX = 0
         self.DY = 0
         self.has_ball = False
         self.num_gamestates = 0
+
+        self.blue_score = 0
+        self.red_score = 0
+        self.reset_teams = False
+
+        self.score_id = self.canvas.create_text(375, 20, text="Blue Score: {}, Red Score: {}".format(self.blue_score, self.red_score), fill="white", font=("Arial", 16, "bold"))
 
 
         # Create buttons for controlling player 1
@@ -88,6 +95,11 @@ class App(customtkinter.CTk):
         self.des_player_entry.pack()
         submit = customtkinter.CTkButton(self, text="Submit", command=self.select_des_player)
         submit.pack()
+
+        #textbox = customtkinter.CTkTextbox(self)
+        #textbox.pack()
+        #textbox.insert("0.0", "new text to insert")  # insert at line 0 character 0
+
 
     def select_des_player(self):
         pos_players = ["LB", "LCD", "RCD", "RB", "LMF", "CMF", "RMF", "LW", "ST", "RW", "GK"]
@@ -141,8 +153,8 @@ class App(customtkinter.CTk):
         new_x1, new_y1 = x1 + dx, y1 + dy
         new_x2, new_y2 = x2 + dx, y2 + dy
 
-        # Ensure the ball stays within boundaries
-        if new_x1 >= 50 and new_x2 <= 700 and new_y1 >= 50 and new_y2 <= 450:
+        # Ensure the ball stays within boundaries (SAME AS )
+        if new_x1 >= 30 and new_x2 <= 720 and new_y1 >= 30 and new_y2 <= 470:
             self.canvas.move(self.BALL, dx, dy)
 
     # Check if the player is close enough to kick the ball
@@ -167,7 +179,7 @@ class App(customtkinter.CTk):
 
         # Ensure the player stays within boundaries
         # player boundaries defined by  self.canvas.create_rectangle(30, 30, 720, 470, outline="white", width=3)
-        if new_x1 >= 30 and new_x2 <= 720 and new_y1 >= 30 and new_y2 <= 470:
+        if new_x1 >= 10 and new_x2 <= 740 and new_y1 >= 10 and new_y2 <= 490:
             self.canvas.move(player, dx, dy)
 
             # Check if player can kick the ball
@@ -180,6 +192,8 @@ class App(customtkinter.CTk):
             if self.num_gamestates > 0 and not self.has_ball:
                 self.move_ball(self.DX * 2, self.DY * 2)
                 self.num_gamestates -=1
+
+        self.goal_scored()
 
     # Controls for player 1
     def move_player1_up(self):
@@ -238,6 +252,72 @@ class App(customtkinter.CTk):
                 RIGHT_WING = self.canvas.create_oval(395, 345, 405, 355, fill=color)
         
                 return [RIGHTBACK, RIGHT_CENTER_DEFENSE, LEFT_CENTER_DEFENSE, LEFTBACK, RIGHT_MF, CENT_MF, LEFT_MF, RIGHT_WING, STRIKER, LEFT_WING, GOALKEEPER]
+    def center_calc(self, x1, y1, x2, y2):
+        return (x1+x2) / 2, (y1 + y2)/2
+
+
+    def reset_player(self, player, x1, y1, x2, y2):
+        center_x, center_y = self.center_calc(x1, y1, x2, y2)
+        self.canvas.moveto(player, center_x, center_y)
+
+    def goal_scored(self):
+        # is ball is at or behind the goal line (check for left and right goal)
+        # if left, update scorescheet with +1 to Blue
+            # if ball position is within the left goal, then 
+        # if right, update scoresheet with +1 to Red
+        # return ball + players to starting positions (call self.init_team for both sides)
+
+        '''# Draw the goals
+       # Left goal
+        left_goal = self.canvas.create_rectangle(30, 225, 50, 275, outline="white", width=3)
+
+        # Right goal
+        right_goal = self.canvas.create_rectangle(700, 225, 720, 275, outline="white", width=3)'''
+
+        # get ball coords
+        x1, y1, x2, y2 = self.canvas.coords(self.BALL)
+
+        # check blue scored
+        if x1 >= 30 and x2 <= 50 and y1 >= 225 and y2 <= 275:
+            self.blue_score +=1
+            self.reset_teams = True
+
+
+        # cgeck red scored
+        elif x1 >= 700 and x2 <= 720 and y1 >= 225 and y2 <= 275:
+            self.red_score +=1
+            self.reset_teams = True
+
+        if self.reset_teams:
+            # reset ball
+            center_x, center_y = (365 + 375) / 2, (240 + 250) / 2
+            self.canvas.moveto(self.BALL, center_x, center_y)
+                
+            # reset red players
+            for player in self.red:
+                self.canvas.delete(player)
+
+            self.red = self.init_team("red", 0, "433")
+
+            for player in self.blue:
+                self.canvas.delete(player)
+
+            self.blue = self.init_team("blue", 1, "433")
+            print(len(self.blue), len(self.red))
+            print(self.designated_player)
+            
+            self.designated_player = self.blue[8]
+
+        self.reset_teams = False
+         
+        # update scoresheet
+        new_scoreline = "Blue Score: {}, Red Score: {}".format(self.blue_score, self.red_score)
+        self.canvas.itemconfig(self.score_id, text=new_scoreline)
+
+        ### put ball in center, re_init teams (delete current ovals, then call self.init_teams)
+        # center coords = (370, 245, 380, 255)
+        
+
 
 app = App()
 app.mainloop()
